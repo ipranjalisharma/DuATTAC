@@ -14,7 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# ── V3 Components ─────────────────────────────────────────────────────────
+# V3 Components 
 
 class SEBlock1D(nn.Module):
     """Squeeze-and-Excitation block for 1D convolutions."""
@@ -67,7 +67,7 @@ class ResidualBlock1D(nn.Module):
         return self.relu(out)
 
 
-# ── V3 Model ──────────────────────────────────────────────────────────────
+#  V3 Model 
 
 class DualStreamRegressor(nn.Module):
     """V3: Residual-SE architecture for ATAC signal regression."""
@@ -79,7 +79,7 @@ class DualStreamRegressor(nn.Module):
         super().__init__()
         self.l2_reg = l2_reg
 
-        # ── Sequence branch (ResNet) ──────────────────────────────
+        # Sequence branch (ResNet) 
         # Initial projection
         self.initial_conv = nn.Sequential(
             nn.Conv1d(seq_input_dim, num_filters, kernel_size, 
@@ -104,7 +104,7 @@ class DualStreamRegressor(nn.Module):
         self.seq_pool = nn.AdaptiveAvgPool1d(1)
         self.seq_fc = nn.Linear(num_filters, hidden_dim)
 
-        # ── Expression branch (MLP - V5 Enhanced) ────────────────
+        #  Expression branch (MLP - V5 Enhanced) 
         self.expr_branch = nn.Sequential(
             nn.Linear(expression_dim, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
@@ -116,7 +116,7 @@ class DualStreamRegressor(nn.Module):
             nn.Dropout(dropout_rate)
         )
 
-        # ── Fusion → regression output ────────────────────────────
+        #  Fusion → regression output 
         self.fusion_fc = nn.Linear(hidden_dim * 2, hidden_dim)
         self.fusion_bn = nn.BatchNorm1d(hidden_dim)
         self.fusion_dropout = nn.Dropout(dropout_rate)
