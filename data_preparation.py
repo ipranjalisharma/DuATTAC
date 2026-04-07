@@ -18,9 +18,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-# ---------------------------------------------------------------------------
 # Caching helpers
-# ---------------------------------------------------------------------------
 
 def _cache_key(condition_names, seed, prefix=None):
     """Deterministic cache key from sorted condition names + seed."""
@@ -86,9 +84,7 @@ def load_cache(cache_dir, cache_name):
     }
 
 
-# ---------------------------------------------------------------------------
 # Condition discovery
-# ---------------------------------------------------------------------------
 
 def discover_conditions(data_dir):
     """Return sorted list of condition names that have both ATAC/ and RNA/."""
@@ -131,9 +127,7 @@ def load_condition_paths(condition_name, data_dir):
     return None, None
 
 
-# ---------------------------------------------------------------------------
 # Main pipeline
-# ---------------------------------------------------------------------------
 
 class DataPreparationPipeline:
     """Prepare regression training data from ATAC + RNA + genome."""
@@ -169,25 +163,25 @@ class DataPreparationPipeline:
 
         np.random.seed(seed)
 
-        # ── Load genome ────────────────────────────────────────────
+        # Load genome 
         print(f"[1/4] Loading FASTA: {os.path.basename(fasta_path)}")
         self.fasta = Fasta(fasta_path)
         print(f"  ✓ {len(self.fasta.keys())} chromosomes")
 
-        # ── Load ATAC peaks + signal ───────────────────────────────
+        # Load ATAC peaks + signal
         print(f"[2/4] Loading ATAC peaks: {os.path.basename(atac_bed_path)}")
         self.peaks_df = self._load_peaks(atac_bed_path, signal_column)
         print(f"  ✓ {len(self.peaks_df)} peaks  |  "
               f"signal range {self.peaks_df['signal'].min():.2f} – "
               f"{self.peaks_df['signal'].max():.2f}")
 
-        # ── Load RNA-seq ───────────────────────────────────────────
+        # Load RNA-seq 
         print(f"[3/4] Loading RNA-seq: {os.path.basename(rna_tsv_path)}")
         rna = pd.read_csv(rna_tsv_path, sep='\t', index_col=0)
         self.rna_df = rna.iloc[:, [0]].fillna(0).copy()
         print(f"  ✓ {self.rna_df.shape[0]} genes × {self.rna_df.shape[1]} samples")
 
-        # ── Load GTF ───────────────────────────────────────────────
+        #  Load GTF 
         print(f"[4/4] Loading GTF annotation …")
         self.gene_coords = {}
         self.genes_by_chrom = {} # Indexed by chrom for fast window lookups
@@ -198,7 +192,6 @@ class DataPreparationPipeline:
 
         print("\n✓ Pipeline initialised\n")
 
-    # ------------------------------------------------------------------ io
     @staticmethod
     def _load_peaks(path, signal_col):
         """Read narrowPeak / BED and extract signal column."""
@@ -259,7 +252,7 @@ class DataPreparationPipeline:
         except Exception as e:
             print(f"  ⚠ GTF parsing error: {e}")
 
-    # -------------------------------------------------------- sequence I/O
+    # sequence I/O
     def extract_sequence(self, chrom, start, end):
         """Extract and validate sequence from genome."""
         if chrom not in self.fasta:
@@ -276,7 +269,7 @@ class DataPreparationPipeline:
             return None
         return seq
 
-    # --------------------------------------------------- expression lookup
+    #  expression lookup
     def get_expression(self, chrom, start, end, num_neighbors=5, max_distance=100000):
         """
         Return a vector of expressions for the N nearest genes within max_distance.
@@ -317,7 +310,7 @@ class DataPreparationPipeline:
         return np.concatenate(neighbor_exprs).astype(np.float32)
 
 
-    # ----------------------------------------------------- data generation
+    #  data generation
     def generate_positive_examples(self):
         """Extract a single centered 1000bp window per peak → target = log2(signal + 1)."""
         print(f"Generating positive examples ({self.seq_length}bp windows, centered) …")
@@ -477,7 +470,7 @@ class DataPreparationPipeline:
                 merged.append(cur)
         return merged
 
-    # --------------------------------------------------------- full pipeline
+    # full pipeline
     def prepare_data(self, test_chroms=('chr8', 'chr9'), val_frac=0.15):
         """Complete pipeline: positives + negatives → chromosome-split."""
         print("\n" + "=" * 60)
