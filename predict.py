@@ -37,9 +37,7 @@ from utils.data_loader import one_hot_encode
 from config import PATHS, DATA_CONFIG
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Alignment helpers
-# ═══════════════════════════════════════════════════════════════════════════
 
 def align_sequence_minimap2(sequence, fasta_path):
     """
@@ -178,9 +176,7 @@ def parse_fasta(path):
     return records
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Prediction
-# ═══════════════════════════════════════════════════════════════════════════
 
 def predict_single(model, device, sequence, expression, norm_mean, norm_std,
                    target_mean=0.0, target_std=1.0, seq_length=1000):
@@ -215,9 +211,7 @@ def predict_single(model, device, sequence, expression, norm_mean, norm_std,
     return final_pred
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Main
-# ═══════════════════════════════════════════════════════════════════════════
 
 def main():
     parser = argparse.ArgumentParser(
@@ -251,7 +245,7 @@ def main():
         torch.device('cuda') if torch.cuda.is_available()
         else torch.device('cpu'))
 
-    # ── Load model ────────────────────────────────────────────────
+    #  Load model 
     checkpoint = torch.load(args.model_path, map_location=device,
                             weights_only=False)
     state = checkpoint['model_state_dict']
@@ -278,7 +272,7 @@ def main():
     print(f"Model loaded from {args.model_path}  "
           f"(epoch {checkpoint.get('epoch', '?')})")
 
-    # ── Load norm stats ───────────────────────────────────────────
+    #  Load norm stats 
     model_dir = os.path.dirname(args.model_path)
     norm_path = None
     for d in [model_dir, os.path.dirname(model_dir), '.']:
@@ -298,7 +292,7 @@ def main():
         norm_std = np.ones((1, expr_dim), dtype=np.float32)
         target_mean, target_std = 0.0, 1.0
 
-    # ── Prepare RNA-seq + GTF if needed ───────────────────────────
+    #  Prepare RNA-seq + GTF if needed 
     rna_df = None
     gene_coords = None
 
@@ -322,7 +316,7 @@ def main():
             print(f"WARNING: GTF not found at {gtf_path}")
             gene_coords = {}
 
-    # ── Collect sequences ─────────────────────────────────────────
+    #  Collect sequences 
     sequences = []
     if args.sequence:
         sequences = [('input_seq', args.sequence.upper())]
@@ -330,7 +324,7 @@ def main():
         sequences = parse_fasta(args.fasta_input)
         print(f"Loaded {len(sequences)} sequences from {args.fasta_input}")
 
-    # ── Predict ───────────────────────────────────────────────────
+    #  Predict 
     results = []
     seq_length = DATA_CONFIG['sequence_length']
 
@@ -392,7 +386,7 @@ def main():
                 'predicted_log2_signal': pred,
             })
 
-    # ── Output ────────────────────────────────────────────────────
+    #  Output 
     print("\n" + "=" * 70)
     print("PREDICTIONS")
     print("=" * 70)
