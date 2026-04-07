@@ -52,7 +52,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     logger = create_logger(args.output_dir, 'testing')
 
-    # ── Discover & select conditions ──────────────────────────────
+    #  Discover & select conditions 
     available = discover_conditions(args.data_dir)
     if not available:
         logger.error(f"No conditions in {args.data_dir}")
@@ -74,7 +74,7 @@ def main():
 
     logger.info(f"Testing conditions: {selected_names}")
 
-    # ── Load or prepare data ──────────────────────────────────────
+    #  Load or prepare data 
     # Try multiple common prefixes used in train.py
     cached = None
     for prefix in ['test', 'mixed', None]:
@@ -130,7 +130,7 @@ def main():
                    all_seq, all_expr, all_tgt, all_info)
 
 
-    # ── Extract test set (chr8, chr9) ─────────────────────────────
+    #  Extract test set (chr8, chr9) 
     test_chroms = set(DATA_CONFIG['test_chromosomes'])
     all_expr = np.asarray(all_expr, dtype=np.float32)
     all_tgt = np.asarray(all_tgt, dtype=np.float32)
@@ -154,7 +154,7 @@ def main():
 
     logger.info(f"Test samples: {len(test_s)}")
 
-    # ── Load norm stats (try saved; fallback to computing) ────────
+    #  Load norm stats (try saved; fallback to computing) 
     model_dir = os.path.dirname(args.model_path)
     # Walk up to find norm_stats in parent dirs
     norm_path = None
@@ -178,12 +178,12 @@ def main():
         std[std == 0] = 1.0
         target_mean, target_std = 0.0, 1.0
 
-    # ── Standardize Targets (BUG FIX) ─────────────────────────────
+    #  Standardize Targets (BUG FIX) 
     # Model predicts Z-scores; targets must be Z-scores before the comparison loop.
     test_t = np.array(test_t, dtype=np.float32)
     test_t = (test_t - target_mean) / target_std
 
-    # ── Build test DataLoader ─────────────────────────────────────
+    #  Build test DataLoader 
     from torch.utils.data import DataLoader
 
     test_dataset = ATACSignalDataset(
@@ -194,7 +194,7 @@ def main():
         pin_memory=not args.cpu,
     )
 
-    # ── Load model ────────────────────────────────────────────────
+    #  Load model 
     checkpoint = torch.load(args.model_path, map_location=device,
                             weights_only=False)
 
@@ -223,7 +223,7 @@ def main():
     logger.info(f"Loaded model from {args.model_path}  "
                 f"(epoch {checkpoint.get('epoch', '?')})")
 
-    # ── Evaluate ──────────────────────────────────────────────────
+    #  Evaluate 
     all_preds, all_targets = [], []
     criterion = torch.nn.MSELoss()
     total_loss = 0.0
@@ -242,17 +242,17 @@ def main():
     all_preds = np.array(all_preds)
     all_targets = np.array(all_targets)
 
-    # ── Calculate Metrics (Standardised Space) ───────────────────
+    #  Calculate Metrics (Standardised Space) 
     # This is the "apples-to-apples" comparison with your train.py logs.
     metrics_std = compute_all_metrics(all_targets, all_preds)
 
-    # ── Calculate Metrics (Raw Log₂ Space) ──────────────────────
+    #  Calculate Metrics (Raw Log₂ Space) 
     # This reflects the real biological signal error.
     all_preds_raw = (all_preds * target_std) + target_mean
     all_targets_raw = (all_targets * target_std) + target_mean
     metrics_raw = compute_all_metrics(all_targets_raw, all_preds_raw)
 
-    # ── Report ────────────────────────────────────────────────────
+    #  Report 
     print("\n" + "=" * 70)
     print("TEST RESULTS: STANDARDISED SPACE (Z-Scores)")
     print("-" * 70)
