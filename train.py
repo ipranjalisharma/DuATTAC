@@ -32,9 +32,7 @@ from utils.data_loader import get_data_loaders
 from config import DEFAULT_HYPERPARAMS, TRAINING_CONFIG, PATHS, DATA_CONFIG
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Trainer
-# ═══════════════════════════════════════════════════════════════════════════
 
 class Trainer:
     """Training loop with early stopping for regression model."""
@@ -63,7 +61,7 @@ class Trainer:
         self.best_epoch = 0
         self.no_improve_count = 0
 
-    # ── single epoch ──────────────────────────────────────────────────
+    #  single epoch 
     def train_epoch(self, train_loader):
         self.model.train()
         total_loss, n_batches = 0.0, 0
@@ -89,7 +87,7 @@ class Trainer:
 
         return total_loss / max(n_batches, 1)
 
-    # ── validation ────────────────────────────────────────────────────
+    #  validation 
     def validate(self, val_loader):
         self.model.eval()
         total_loss = 0.0
@@ -113,7 +111,7 @@ class Trainer:
                                       np.array(all_preds))
         return avg_loss, metrics, np.array(all_preds), np.array(all_targets)
 
-    # ── full training loop ────────────────────────────────────────────
+    #  full training loop 
     def train(self, train_loader, val_loader, save_dir):
         """Train with early stopping.  Save ALL epoch checkpoints."""
         os.makedirs(save_dir, exist_ok=True)
@@ -181,9 +179,7 @@ class Trainer:
         return best_metrics
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Main
-# ═══════════════════════════════════════════════════════════════════════════
 
 def main():
     parser = argparse.ArgumentParser(
@@ -223,7 +219,7 @@ def main():
     logger.info(f"Output: {args.output_dir}")
     logger.info(f"Data:   {args.data_dir}")
 
-    # ── Discover conditions ───────────────────────────────────────
+    #  Discover conditions 
     available = discover_conditions(args.data_dir)
     if not available:
         logger.error(f"No conditions found in {args.data_dir}")
@@ -240,7 +236,7 @@ def main():
         logger.error("No valid conditions selected")
         sys.exit(1)
 
-    # ── Partition Conditions ──────────────────────────────────────
+    #  Partition Conditions 
     # Shuffle and split into Train / Val / Test pools (Condition-wise)
     np.random.seed(args.seed)
     all_names = sorted(pool_names)
@@ -273,7 +269,7 @@ def main():
     if test_pool: logger.info(f"  Test Cell Types: {test_pool}")
     logger.info("=" * 70)
 
-    # ── Data Loading Logic ────────────────────────────────────────
+    #  Data Loading Logic 
     def get_pool_data(names, prefix, split_mode='combine'):
         if not names: return [], [], [], []
         
@@ -330,7 +326,7 @@ def main():
                    (v_s, np.array(v_e), np.array(v_t), v_i), \
                    (te_s, np.array(te_e), np.array(te_t), te_i)
 
-    # ── Orchestrate Split ─────────────────────────────────────────
+    #  Orchestrate Split 
     if n >= 3:
         tr_s, tr_e, tr_t, tr_i = get_pool_data(train_pool, 'train')
         val_s, val_e, val_t, val_i = get_pool_data(val_pool, 'val')
@@ -340,7 +336,7 @@ def main():
         (tr_s, tr_e, tr_t, tr_i), (val_s, val_e, val_t, val_i), (te_s, te_e, te_t, te_i) = \
             get_pool_data(train_pool, 'mixed', split_mode='internal')
 
-    # ── Final Processing ───────────────────────────────────────────
+    #  Final Processing 
     # Standardize based on TRAIN pool stats
     tr_t = np.asarray(tr_t, dtype=np.float32)
     val_t = np.asarray(val_t, dtype=np.float32)
@@ -371,7 +367,7 @@ def main():
              mean=norm_stats['mean'], std=norm_stats['std'],
              target_mean=target_mean, target_std=target_std)
 
-    # ── Build & Train model ───────────────────────────────────────
+    #  Build & Train model 
     # Synchronize CLI arguments with hyperparameters
     hyperparams = DEFAULT_HYPERPARAMS.copy()
     hyperparams['learning_rate'] = args.learning_rate
@@ -396,7 +392,7 @@ def main():
     best_metrics = trainer.train(train_loader, val_loader, args.output_dir)
 
 
-    # ── Final Test Evaluation (Held-out Cell Types) ───────────────
+    #  Final Test Evaluation (Held-out Cell Types) 
     if len(te_s) > 0:
         logger.info("\nEvaluating on HELD-OUT CONDITION test set …")
         _, metrics_std, preds_std, targets_std = trainer.validate(test_loader)
