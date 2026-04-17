@@ -1,4 +1,4 @@
-#  Duetta (ATAC Signal Predictor): Multi-Gene Context Architecture
+#  DuATTAC (ATAC Signal Predictor): Multi-Gene Context Architecture
 
 Welcome to the ultimate guide for the ATAC Signal Predictor project. This manual provides a 360-degree view of the system, from hardware setup and biological theory to mathematical proofs and neural architecture.
 
